@@ -9,6 +9,7 @@ Personal dotfiles for macOS, managed with symlinks.
 | `ssh/config` | `~/.ssh/config` |
 | `.zshrc` | `~/.zshrc` |
 | `.gitconfig` | `~/.gitconfig` |
+| `Brewfile` | — |
 
 ## Setup on a new machine
 
@@ -20,6 +21,12 @@ ln -s ~/dotfiles/.zshrc ~/.zshrc
 ln -s ~/dotfiles/.gitconfig ~/.gitconfig
 
 source ~/.zshrc
+```
+
+### Restore Homebrew packages
+
+```bash
+brew bundle install --file=~/dotfiles/Brewfile
 ```
 
 ## Machine-specific config
