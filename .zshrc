@@ -11,9 +11,9 @@ alias cua='claude-usage log agent'
 alias cus='claude-usage log skill'
 
 # Load secrets from ~/.secrets/
-source ~/.secrets/shell-exports.env
-source ~/.secrets/clawdbot.env
-export GOOGLE_PLACES_API_KEY GEMINI_API_KEY OPENAI_API_KEY OPENAI_IMAGEGEN_API_KEY OPENAI_WHISPER_API_KEY
+[[ -f ~/.secrets/shell-exports.env ]] && source ~/.secrets/shell-exports.env
+[[ -f ~/.secrets/clawdbot.env ]] && source ~/.secrets/clawdbot.env
+[[ -n "$GOOGLE_PLACES_API_KEY" ]] && export GOOGLE_PLACES_API_KEY GEMINI_API_KEY OPENAI_API_KEY OPENAI_IMAGEGEN_API_KEY OPENAI_WHISPER_API_KEY
 
 # Claude Code analytics dashboard
 alias claude-stats='python3 ~/.claude/scripts/generate_dashboard.py -o ~/Desktop/claude-analytics.html && open ~/Desktop/claude-analytics.html'
