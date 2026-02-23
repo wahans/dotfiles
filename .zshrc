@@ -37,6 +37,9 @@ wt-setup() {
   echo "Worktrees ready: za (a), zb (b), zc (c)"
 }
 
+# Machine-specific overrides
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
 # Tear down worktrees: wt-clean <repo-path>
 wt-clean() {
   local repo="${1:?Usage: wt-clean <repo-path>}"
