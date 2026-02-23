@@ -1,3 +1,7 @@
+# Dotfiles sync
+alias dotfiles-push='cd ~/dotfiles && git add -A && git commit -m "update dotfiles" && git push'
+alias dotfiles-pull='cd ~/dotfiles && git pull'
+
 # Backup alias
 alias backup-all='d=$(date +%Y%m%d); rm -rf ~/projects-backup-$d ~/spawner-skills-backup-$d ~/personal-backup-$d 2>/dev/null; cp -a ~/projects ~/projects-backup-$d && cp -a ~/Desktop/spawner-skills ~/spawner-skills-backup-$d && cp -a ~/Desktop/personal ~/personal-backup-$d && echo "Backup complete: $d"'
 
