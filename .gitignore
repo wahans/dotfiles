@@ -1,0 +1,5 @@
+# Sensitive
+*.pem
+*.key
+*secret*
+*password*

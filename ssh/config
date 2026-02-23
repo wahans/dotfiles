@@ -1,0 +1,9 @@
+Host minni
+    HostName 100.105.209.23
+    User openclaw
+    IdentityFile ~/.ssh/acfs_ed25519
+
+Host macmini
+    HostName 100.105.209.23
+    User openclaw
+    IdentityFile ~/.ssh/id_ed25519
