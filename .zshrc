@@ -38,6 +38,20 @@ wt-setup() {
   echo "Worktrees ready: za (a), zb (b), zc (c)"
 }
 
+# Remote-control with auto-tmux and permissions prompt
+rc() {
+  local session="${1:-rc}"
+  echo "Run without permission checks? (y/n)"
+  read REPLY
+  local flags=""
+  [[ "$REPLY" == "y" ]] && flags="--dangerously-skip-permissions"
+  if [ -z "$TMUX" ]; then
+    tmux new-session -A -s "$session" "claude $flags remote-control"
+  else
+    claude $flags remote-control
+  fi
+}
+
 # Machine-specific overrides
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 

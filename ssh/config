@@ -7,3 +7,29 @@ Host macmini
     HostName 100.105.209.23
     User jwh
     IdentityFile ~/.ssh/id_ed25519
+
+# GitHub bot accounts
+Host github-river
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/river_b0t_github
+    IdentitiesOnly yes
+
+Host github-eva
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/eva-b0t
+    IdentitiesOnly yes
+
+Host github-crosley
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/crosley-b0t
+    IdentitiesOnly yes
+
+# Default GitHub (river-b0t)
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/river_b0t_github
+    IdentitiesOnly yes
