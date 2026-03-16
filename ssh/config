@@ -33,3 +33,10 @@ Host github.com
     User git
     IdentityFile ~/.ssh/river_b0t_github
     IdentitiesOnly yes
+
+# Personal GitHub (wahans)
+Host github-wahans
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/wahans_github
+    IdentitiesOnly yes
