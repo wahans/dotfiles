@@ -52,6 +52,9 @@ rc() {
   fi
 }
 
+# direnv - auto-switch env vars by directory
+eval "$(direnv hook zsh)"
+
 # Machine-specific overrides
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 

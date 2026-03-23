@@ -28,9 +28,11 @@
 
 ## Personal
 
-### Dotfiles
+### Dotfiles & ~/.claude Backup
 - Repo: https://github.com/wahans/dotfiles at `~/dotfiles`
 - Symlinked: `ssh/config` → `~/.ssh/config`, `.zshrc` → `~/.zshrc`, `.gitconfig` → `~/.gitconfig`
+- **~/.claude backup**: synced to `~/dotfiles/claude/` via sync script (no dedicated repo)
+- ~/.claude has local-only git for version control, but no remote — don't push
 - Setup on new machine: clone repo, then `ln -s` each file
 - Machine-specific config goes in `~/.zshrc.local` (sourced automatically, not tracked in repo)
 - Sync: `dotfiles-push` on MacBook Pro, `dotfiles-pull` on Mac Mini
@@ -93,8 +95,3 @@
 ### GitHub Account Consolidation
 - See [github-account-consolidation.md](github-account-consolidation.md) — migrating all CL repos to `wh-cl` account
 - Affects: `wahans` repos, `wh-cl/clipper` (Vercel constraint)
-
----
-
-# currentDate
-Today's date is 2026-03-14.
