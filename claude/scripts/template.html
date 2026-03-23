@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card { @apply bg-white rounded-lg shadow-md p-6 }
+        .stat-value { @apply text-3xl font-bold text-gray-900 }
+        .stat-label { @apply text-sm text-gray-500 uppercase tracking-wide }
+        .section-title { @apply text-xl font-semibold text-gray-800 mb-4 }
+        .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium }
+        .badge-blue { @apply bg-blue-100 text-blue-800 }
+        .badge-green { @apply bg-green-100 text-green-800 }
+        .badge-yellow { @apply bg-yellow-100 text-yellow-800 }
+        .badge-red { @apply bg-red-100 text-red-800 }
+        .tooltip { @apply invisible absolute z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm }
+        .has-tooltip:hover .tooltip { @apply visible }
+        [x-cloak] { display: none !important; }
+    </style>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen" x-data="dashboard()">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">Claude Code Analytics</h1>
+                    <p class="text-purple-200 mt-1">Generated <span x-text="data.generated"></span></p>
+                </div>
+                <div class="text-right">
+                    <div class="text-4xl font-bold">$<span x-text="data.costs.sonnet"></span></div>
+                    <div class="text-purple-200">API-Equivalent Value</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <!-- Billing Explainer Banner -->
+        <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+                <div class="text-blue-500 text-xl">ℹ️</div>
+                <div>
+                    <h3 class="font-semibold text-blue-900">These are not charges—they show the value you're getting</h3>
+                    <p class="text-sm text-blue-700 mt-1">
+                        Dollar amounts represent what your usage <strong>would cost</strong> at standard API rates.
+                        If you're on <strong>Claude Pro ($20/mo)</strong> or <strong>Max ($100-200/mo)</strong>,
+                        Claude Code usage is included in your subscription—you won't be billed per-token.
+                        This dashboard helps you understand your usage patterns and the value your plan delivers.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- Smart Insights -->
+        <template x-if="data.smart_insights && data.smart_insights.length > 0">
+            <div class="mb-8">
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                        <span>Smart Insights</span>
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <template x-for="insight in data.smart_insights" :key="insight.title">
+                            <div class="bg-white rounded-lg p-3 shadow-sm border border-amber-100">
+                                <div class="flex items-start gap-2">
+                                    <span class="text-xl" x-text="insight.icon"></span>
+                                    <div>
+                                        <div class="font-medium text-gray-900 text-sm" x-text="insight.title"></div>
+                                        <div class="text-xs text-gray-500 mt-1" x-text="insight.desc"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            <div class="card">
+                <div class="stat-value" x-text="data.summary.sessions"></div>
+                <div class="stat-label">Sessions</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" x-text="data.summary.projects"></div>
+                <div class="stat-label">Projects</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" x-text="formatNumber(data.summary.total_tool_calls)"></div>
+                <div class="stat-label">Tool Calls</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" x-text="data.summary.cache_rate + '%'"></div>
+                <div class="stat-label">Cache Rate</div>
+            </div>
+            <div class="card">
+                <div class="stat-value">$<span x-text="data.costs.projected_monthly"></span></div>
+                <div class="stat-label">Value/Month (proj.)</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" x-text="data.summary.error_rate + '%'"></div>
+                <div class="stat-label">Error Rate</div>
+            </div>
+        </div>
+
+        <!-- API-Equivalent Value Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="card border-l-4 border-purple-500">
+                <div class="text-sm text-gray-500 mb-1">Sonnet Value</div>
+                <div class="text-2xl font-bold text-purple-600">$<span x-text="data.costs.sonnet"></span></div>
+                <div class="text-xs text-gray-400 mt-1">at $3/M in, $15/M out</div>
+            </div>
+            <div class="card border-l-4 border-indigo-500">
+                <div class="text-sm text-gray-500 mb-1">If Opus 4.5</div>
+                <div class="text-2xl font-bold text-indigo-600">$<span x-text="data.costs.opus"></span></div>
+                <div class="text-xs text-gray-400 mt-1">at $15/M in, $75/M out</div>
+            </div>
+            <div class="card border-l-4 border-green-500">
+                <div class="text-sm text-gray-500 mb-1">If Haiku</div>
+                <div class="text-2xl font-bold text-green-600">$<span x-text="data.costs.haiku"></span></div>
+                <div class="text-xs text-gray-400 mt-1">at $0.25/M in, $1.25/M out</div>
+            </div>
+        </div>
+
+        <!-- Week over Week -->
+        <template x-if="data.wow && data.wow.this_week > 0">
+            <div class="card mb-8">
+                <h3 class="section-title">Week over Week</h3>
+                <div class="flex items-center gap-8">
+                    <div>
+                        <div class="text-sm text-gray-500">This Week</div>
+                        <div class="text-2xl font-bold">$<span x-text="data.wow.this_week"></span></div>
+                    </div>
+                    <div class="text-4xl" x-text="data.wow.change_direction === 'up' ? '↑' : data.wow.change_direction === 'down' ? '↓' : '→'"
+                         :class="data.wow.change_direction === 'up' ? 'text-red-500' : data.wow.change_direction === 'down' ? 'text-green-500' : 'text-gray-400'"></div>
+                    <div>
+                        <div class="text-sm text-gray-500">Last Week</div>
+                        <div class="text-2xl font-bold">$<span x-text="data.wow.last_week"></span></div>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-xl font-semibold" :class="data.wow.change_pct > 0 ? 'text-red-500' : 'text-green-500'" x-text="(data.wow.change_pct > 0 ? '+' : '') + data.wow.change_pct + '%'"></span>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Daily Value Chart -->
+            <div class="card">
+                <h3 class="section-title">Daily Usage Value</h3>
+                <canvas id="dailyCostChart" height="200"></canvas>
+            </div>
+
+            <!-- Value Breakdown Pie -->
+            <div class="card">
+                <h3 class="section-title">Value by Token Type</h3>
+                <canvas id="costBreakdownChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Hourly & Weekday Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="section-title">Usage by Hour</h3>
+                <canvas id="hourlyChart" height="200"></canvas>
+            </div>
+            <div class="card">
+                <h3 class="section-title">Usage by Day</h3>
+                <canvas id="weekdayChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Tools & MCP Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Top Tools -->
+            <div class="card">
+                <h3 class="section-title">Top Tools</h3>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <template x-for="tool in data.tools.slice(0, 15)" :key="tool.name">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="font-mono text-sm truncate" x-text="tool.name"></span>
+                            <span class="badge badge-blue" x-text="formatNumber(tool.count)"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- MCP Servers -->
+            <div class="card">
+                <h3 class="section-title">MCP Servers (<span x-text="data.summary.total_mcp_calls"></span> calls)</h3>
+                <div class="space-y-3 max-h-96 overflow-y-auto">
+                    <template x-for="mcp in data.mcp" :key="mcp.server">
+                        <div class="border-b border-gray-100 pb-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-semibold text-sm" x-text="mcp.server"></span>
+                                <span class="badge badge-green" x-text="mcp.count"></span>
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <template x-for="func in mcp.functions.slice(0, 5)" :key="func.name">
+                                    <span class="text-xs bg-gray-100 px-2 py-0.5 rounded" x-text="func.name + ' (' + func.count + ')'"></span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subagents & Sequences -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Subagents -->
+            <div class="card">
+                <h3 class="section-title">Subagents (<span x-text="data.summary.total_subagent_calls"></span> spawned)</h3>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <template x-for="agent in data.subagents.slice(0, 10)" :key="agent.type">
+                        <div class="border-b border-gray-100 pb-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium text-sm" x-text="agent.type"></span>
+                                <span class="badge badge-yellow" x-text="agent.count"></span>
+                            </div>
+                            <template x-if="agent.samples && agent.samples.length > 0">
+                                <div class="text-xs text-gray-500 mt-1 truncate" x-text="agent.samples[0].description || agent.samples[0].prompt"></div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Tool Sequences -->
+            <div class="card">
+                <h3 class="section-title">Common Tool Sequences</h3>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <template x-for="seq in data.sequences" :key="seq.sequence">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span class="font-mono text-sm" x-text="seq.sequence"></span>
+                            <span class="text-gray-500 text-sm" x-text="seq.count + 'x'"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="card mb-8">
+            <h3 class="section-title">Projects by Usage Value</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-500 uppercase">
+                            <th class="pb-2">Project</th>
+                            <th class="pb-2">Sessions</th>
+                            <th class="pb-2">Tokens</th>
+                            <th class="pb-2">Value</th>
+                            <th class="pb-2">Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="proj in data.projects.slice(0, 15)" :key="proj.name">
+                            <tr class="border-t border-gray-100">
+                                <td class="py-2 font-medium" x-text="proj.name"></td>
+                                <td class="py-2" x-text="proj.session_count"></td>
+                                <td class="py-2" x-text="formatNumber(proj.tokens)"></td>
+                                <td class="py-2 font-semibold text-purple-600">$<span x-text="proj.cost_sonnet"></span></td>
+                                <td class="py-2">
+                                    <span x-show="proj.total_errors > 0" class="badge badge-red" x-text="proj.total_errors"></span>
+                                    <span x-show="proj.total_errors === 0" class="text-gray-400">-</span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Highest Value Sessions -->
+        <div class="card mb-8">
+            <h3 class="section-title">Highest Value Sessions</h3>
+            <div class="space-y-4">
+                <template x-for="session in data.expensive_sessions.slice(0, 10)" :key="session.session_id">
+                    <div class="border rounded-lg p-4" :class="session.is_anomaly ? 'border-red-300 bg-red-50' : 'border-gray-200'">
+                        <div class="flex items-start justify-between mb-2">
+                            <div>
+                                <span class="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded" x-text="session.session_id"></span>
+                                <span class="ml-2 text-sm text-gray-500" x-text="session.project"></span>
+                                <span class="ml-2 text-xs text-gray-400" x-text="session.date"></span>
+                                <template x-if="session.is_anomaly">
+                                    <span class="ml-2 badge badge-red">Anomaly</span>
+                                </template>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-purple-600">$<span x-text="session.cost_sonnet"></span></div>
+                                <div class="text-xs text-gray-400" x-text="session.turns + ' turns'"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <template x-for="tool in session.top_tools" :key="tool.name">
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded" x-text="tool.name + ' (' + tool.count + ')'"></span>
+                            </template>
+                        </div>
+                        <div class="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded" x-text="session.cost_insight"></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Token Details -->
+        <div class="card mb-8">
+            <h3 class="section-title">Token Details</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <div class="text-2xl font-bold" x-text="formatNumber(data.tokens.input)"></div>
+                    <div class="text-sm text-gray-500">Input Tokens</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold" x-text="formatNumber(data.tokens.output)"></div>
+                    <div class="text-sm text-gray-500">Output Tokens</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-green-600" x-text="formatNumber(data.tokens.cache_read)"></div>
+                    <div class="text-sm text-gray-500">Cache Read (90% off)</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-amber-600" x-text="formatNumber(data.tokens.cache_creation)"></div>
+                    <div class="text-sm text-gray-500">Cache Creation (+25%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Errors & Retries -->
+        <template x-if="data.tool_errors && data.tool_errors.length > 0">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="card">
+                    <h3 class="section-title">Tool Errors (<span x-text="data.summary.total_errors"></span> total)</h3>
+                    <div class="space-y-2">
+                        <template x-for="err in data.tool_errors" :key="err.name">
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="font-mono text-sm" x-text="err.name"></span>
+                                <span class="badge badge-red" x-text="err.count"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="section-title">Tool Retries (<span x-text="data.summary.total_retries"></span> total)</h3>
+                    <div class="space-y-2">
+                        <template x-for="retry in data.tool_retries" :key="retry.name">
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="font-mono text-sm" x-text="retry.name"></span>
+                                <span class="badge badge-yellow" x-text="retry.count"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Session Duration Stats -->
+        <template x-if="data.duration_stats && data.duration_stats.avg > 0">
+            <div class="card mb-8">
+                <h3 class="section-title">Session Duration</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <div class="text-2xl font-bold" x-text="data.duration_stats.avg + ' min'"></div>
+                        <div class="text-sm text-gray-500">Average</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" x-text="data.duration_stats.median + ' min'"></div>
+                        <div class="text-sm text-gray-500">Median</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" x-text="data.duration_stats.min + ' min'"></div>
+                        <div class="text-sm text-gray-500">Shortest</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" x-text="data.duration_stats.max + ' min'"></div>
+                        <div class="text-sm text-gray-500">Longest</div>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-end h-16">
+                    <template x-for="(label, key) in {'under_5': '<5m', '5_to_15': '5-15m', '15_to_30': '15-30m', '30_to_60': '30-60m', 'over_60': '>60m'}">
+                        <div class="flex-1 text-center">
+                            <div class="bg-purple-200 rounded-t" :style="'height: ' + Math.max(4, (data.duration_stats.distribution[key] || 0) * 2) + 'px'"></div>
+                            <div class="text-xs text-gray-500 mt-1" x-text="label"></div>
+                            <div class="text-xs font-medium" x-text="data.duration_stats.distribution[key] || 0"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 py-6 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>Generated by Claude Code Analytics Dashboard</p>
+            <p class="text-sm mt-1" x-text="'Analyzed ' + data.summary.files + ' log files'"></p>
+        </div>
+    </footer>
+
+    <script>
+        const DATA = __DATA_PLACEHOLDER__;
+
+        function dashboard() {
+            return {
+                data: DATA,
+                formatNumber(n) {
+                    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+                    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+                    return n.toString();
+                },
+                init() {
+                    this.$nextTick(() => {
+                        this.initCharts();
+                    });
+                },
+                initCharts() {
+                    // Daily Cost Chart
+                    const dailyCtx = document.getElementById('dailyCostChart');
+                    if (dailyCtx && this.data.daily.length > 0) {
+                        new Chart(dailyCtx, {
+                            type: 'line',
+                            data: {
+                                labels: this.data.daily.slice(-30).map(d => d.date_short),
+                                datasets: [{
+                                    label: 'Daily Cost ($)',
+                                    data: this.data.daily.slice(-30).map(d => d.cost),
+                                    borderColor: 'rgb(147, 51, 234)',
+                                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
+                                }
+                            }
+                        });
+                    }
+
+                    // Cost Breakdown Pie
+                    const pieCtx = document.getElementById('costBreakdownChart');
+                    if (pieCtx && this.data.costs.breakdown) {
+                        new Chart(pieCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Input', 'Output', 'Cache Read', 'Cache Creation'],
+                                datasets: [{
+                                    data: [
+                                        this.data.costs.breakdown.input,
+                                        this.data.costs.breakdown.output,
+                                        this.data.costs.breakdown.cache_read,
+                                        this.data.costs.breakdown.cache_creation
+                                    ],
+                                    backgroundColor: ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2)
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Hourly Chart
+                    const hourlyCtx = document.getElementById('hourlyChart');
+                    if (hourlyCtx && this.data.hourly.length > 0) {
+                        new Chart(hourlyCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: this.data.hourly.map(h => h.label),
+                                datasets: [{
+                                    label: 'Cost ($)',
+                                    data: this.data.hourly.map(h => h.cost),
+                                    backgroundColor: 'rgba(99, 102, 241, 0.7)'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
+                                }
+                            }
+                        });
+                    }
+
+                    // Weekday Chart
+                    const weekdayCtx = document.getElementById('weekdayChart');
+                    if (weekdayCtx && this.data.weekday.length > 0) {
+                        new Chart(weekdayCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: this.data.weekday.map(w => w.day_short),
+                                datasets: [{
+                                    label: 'Cost ($)',
+                                    data: this.data.weekday.map(w => w.cost),
+                                    backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: { beginAtZero: true, ticks: { callback: v => '$' + v } }
+                                }
+                            }
+                        });
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
