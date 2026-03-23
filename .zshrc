@@ -1,5 +1,5 @@
 # Dotfiles sync
-alias dotfiles-push='cd ~/dotfiles && git add -A && git commit -m "update dotfiles" && gh auth switch --user wahans 2>/dev/null; git push; gh auth switch --user wh-cl 2>/dev/null'
+alias dotfiles-push='cd ~/dotfiles && git add -A && git commit -m "update dotfiles" && git push'
 alias dotfiles-pull='cd ~/dotfiles && git pull'
 brewi() { brew install "$@" && brew bundle dump --force --file=~/dotfiles/Brewfile && dotfiles-push }
 
