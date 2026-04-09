@@ -13,12 +13,30 @@ alias cus='claude-usage log skill'
 
 # Load secrets from ~/.secrets/
 [[ -f ~/.secrets/shell-exports.env ]] && source ~/.secrets/shell-exports.env
-[[ -f ~/.secrets/clawdbot.env ]] && source ~/.secrets/clawdbot.env
-[[ -n "$GOOGLE_PLACES_API_KEY" ]] && export GOOGLE_PLACES_API_KEY GEMINI_API_KEY OPENAI_API_KEY OPENAI_IMAGEGEN_API_KEY OPENAI_WHISPER_API_KEY
 
 # Claude Code analytics dashboard
 alias claude-stats='python3 ~/.claude/scripts/generate_dashboard.py -o ~/Desktop/claude-analytics.html && open ~/Desktop/claude-analytics.html'
 # ANTHROPIC_API_KEY loaded from ~/.secrets/shell-exports.env
+export CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1
+
+# Claude Code wrapper:
+#   1. Refuse to launch from $HOME (home-dir sessions lack project scoping;
+#      historically drove ~1.4B tokens of waste — see
+#      ~/.claude/lessons/token-efficiency.md L8).
+#   2. Ask whether to skip permissions for this session.
+claude() {
+  if [[ "$PWD" == "$HOME" ]]; then
+    echo "refusing: cd into a project directory first (e.g. ~/cl, ~/pn, or a project)"
+    return 1
+  fi
+  echo -n "Skip permissions for this session? (y/N) "
+  read -r answer
+  if [[ "$answer" =~ ^[Yy]$ ]]; then
+    command claude --dangerously-skip-permissions "$@"
+  else
+    command claude "$@"
+  fi
+}
 
 # Git worktree Claude sessions
 # Usage: wt-setup <repo-path> to create worktrees, then za/zb/zc to jump in
@@ -66,3 +84,10 @@ wt-clean() {
   git -C "$repo" worktree remove "$WT_BASE/c" 2>/dev/null
   echo "Worktrees removed"
 }
+
+# bun completions
+[ -s "/Users/wallyhansen/.bun/_bun" ] && source "/Users/wallyhansen/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
