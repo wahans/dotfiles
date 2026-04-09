@@ -9,7 +9,7 @@ Host minni
 Host macmini
     HostName 100.105.209.23
     User jwh
-    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/acfs_ed25519
 
 # ============================================
 # GitHub: Personal (wahans) -- DEFAULT
