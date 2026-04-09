@@ -1,3 +1,6 @@
+# ============================================
+# Machine SSH
+# ============================================
 Host minni
     HostName 100.105.209.23
     User jwh
@@ -8,35 +11,34 @@ Host macmini
     User jwh
     IdentityFile ~/.ssh/id_ed25519
 
-# GitHub bot accounts
-Host github-river
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/river_b0t_github
-    IdentitiesOnly yes
-
-Host github-eva
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/eva-b0t
-    IdentitiesOnly yes
-
-Host github-crosley
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/crosley-b0t
-    IdentitiesOnly yes
-
-# Default GitHub (river-b0t)
+# ============================================
+# GitHub: Personal (wahans) -- DEFAULT
+# ============================================
 Host github.com
     HostName github.com
     User git
-    IdentityFile ~/.ssh/river_b0t_github
+    IdentityFile ~/.ssh/wahans_github
     IdentitiesOnly yes
 
-# Personal GitHub (wahans)
 Host github-wahans
     HostName github.com
     User git
     IdentityFile ~/.ssh/wahans_github
+    IdentitiesOnly yes
+# ============================================
+# GitHub: river-b0t (personal bot)
+# ============================================
+Host github-riverbot
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/riverbot_github
+    IdentitiesOnly yes
+
+# ============================================
+# GitHub: CrossLayer (wh-cl)
+# ============================================
+Host github-crosslayer
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/crosslayer_github
     IdentitiesOnly yes
